@@ -1,42 +1,25 @@
 /**
- * Custom Plugin Entry Point
- *
- * This file is where you can define custom actions, providers, and evaluators
- * for your ElizaOS agent. Add your logic here and reference this plugin in
- * your character file.
+ * ChainPulse / Web3Instant — main agent plugin entry.
+ * Register `web3journalistPlugin` in your character JSON `plugins` array.
  *
  * ElizaOS Plugin Docs: https://elizaos.github.io/eliza/docs/core/plugins
  */
 
-import { type Plugin } from "@elizaos/core";
+import type { Plugin } from "@elizaos/core";
+import { web3journalistPlugin } from "./plugins/web3journalist";
 
-/**
- * Example custom action.
- * Replace this with your own action logic.
- */
-const exampleAction = {
-  name: "EXAMPLE_ACTION",
-  description: "An example action — replace with your own.",
-  similes: ["DEMO", "SAMPLE"],
-  validate: async () => true,
-  handler: async (_runtime: unknown, message: { content: { text: string } }) => {
-    console.log("Custom action triggered with message:", message.content.text);
-    return true;
-  },
-  examples: [],
-};
+// TODO: implement in prompt-XX
+export const customPlugin: Plugin = web3journalistPlugin;
 
-/**
- * Your custom plugin.
- * Add this plugin's name to the `plugins` array in your character file
- * to activate it.
- */
-export const customPlugin: Plugin = {
-  name: "custom-plugin",
-  description: "My custom ElizaOS plugin",
-  actions: [exampleAction],
-  providers: [],
-  evaluators: [],
-};
+export { web3journalistPlugin } from "./plugins/web3journalist";
+export { character } from "./character";
+
+/** Helius webhook queue — POST /webhook/helius pushes here; poll with {@link drainHeliusWebhookEvents}. */
+export {
+  heliusWebhookQueue,
+  pushHeliusWebhookEvents,
+  drainHeliusWebhookEvents,
+  heliusWebhookQueueLength,
+} from "./plugins/web3journalist/webhook/heliusWebhookQueue";
 
 export default customPlugin;
