@@ -152,6 +152,48 @@ export async function fetchLatestStories(): Promise<NewsBrief[]> {
   return stories;
 }
 
+/**
+ * Same as fetchLatestStories but skips the in-memory URL dedup.
+ * Used by the scheduler so every 5-min cycle still sees the full 24h window.
+ */
+export async function fetchAllRecentStories(): Promise<NewsBrief[]> {
+  const stories: NewsBrief[] = [];
+  const oneDayAgo = new Date(Date.now() - DEDUP_WINDOW_MS);
+
+  for (const source of RSS_SOURCES) {
+    try {
+      const feed = await parser.parseURL(source.url);
+      const recentItems = feed.items.filter((item) => {
+        if (!item.pubDate) return false;
+        return new Date(item.pubDate) > oneDayAgo;
+      });
+
+      for (const item of recentItems.slice(0, 10)) {
+        if (!item.link || !item.title) continue;
+
+        const rawSnippet =
+          item.contentSnippet ||
+          (item.content ? stripHtml(item.content).slice(0, 300) : "") ||
+          "";
+
+        stories.push({
+          type: "rss",
+          headline: item.title,
+          summary: rawSnippet.slice(0, 300),
+          sourceUrl: item.link,
+          sourceName: source.name,
+          publishedAt: item.pubDate || new Date().toISOString(),
+          category: categorizeBrief(item.title, rawSnippet),
+        });
+      }
+    } catch (err) {
+      console.error(`RSS fetch failed for ${source.name}:`, err);
+    }
+  }
+
+  return stories;
+}
+
 function formatBriefsForContext(stories: NewsBrief[]): string {
   if (stories.length === 0) return "No new RSS stories available.";
 

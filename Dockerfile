@@ -1,37 +1,37 @@
 # syntax=docker/dockerfile:1
-
+# ──────────────────────────────────────────────
+# ElizaOS Agent (Don Roneth – Web3Instant)
+# ──────────────────────────────────────────────
 FROM node:23-slim AS base
 
-# Install system dependencies needed for native modules (e.g. better-sqlite3)
 RUN apt-get update && apt-get install -y \
-  python3 \
-  make \
-  g++ \
-  git \
+  python3 make g++ git \
   && rm -rf /var/lib/apt/lists/*
 
-# Disable telemetry
-ENV ELIZAOS_TELEMETRY_DISABLED=true
-ENV DO_NOT_TRACK=1
+ENV ELIZAOS_TELEMETRY_DISABLED=true \
+    DO_NOT_TRACK=1
 
 WORKDIR /app
 
-# Install pnpm
-RUN npm install -g pnpm
-
-# Copy package manifest and install dependencies
 COPY package.json ./
-RUN pnpm install
+RUN npm install --omit=dev && npm cache clean --force
 
-# Copy all source files
-COPY . .
+COPY src/ src/
+COPY scripts/ scripts/
+COPY characters/ characters/
+COPY chainpulse-plugin/ chainpulse-plugin/
+COPY tsconfig.json ./
 
-# Create data directory for SQLite
+RUN npx esbuild src/index.ts \
+      --bundle --platform=node --format=esm \
+      --outfile=dist/index.js \
+      --external:@elizaos/core --external:rss-parser
+
 RUN mkdir -p /app/data
 
 EXPOSE 3000
 
-ENV NODE_ENV=production
-ENV SERVER_PORT=3000
+ENV NODE_ENV=production \
+    SERVER_PORT=3000
 
-CMD ["pnpm", "start"]
+CMD ["sh", "-c", "node scripts/llm-proxy.mjs & sleep 2 && npx elizaos start --character ./characters/agent.character.json"]

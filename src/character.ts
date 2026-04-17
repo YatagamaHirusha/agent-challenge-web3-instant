@@ -1,34 +1,56 @@
 import type { Character } from "@elizaos/core";
 
-/**
- * ElizaOS v2-style model provider id (JSON: `"modelProvider": "ollama"`).
- * When you upgrade to `@elizaos/core` v2, replace with:
- * `import { ModelProviderName } from "@elizaos/core"` if your version exports it.
- */
+/** Model provider label (informational; LLM is configured via env + plugins). */
 export const ModelProviderName = {
   OLLAMA: "ollama",
 } as const;
 
 /**
- * Platform client enum placeholder — populated in prompt 05 (Twitter, Telegram, etc.).
- * Empty until then; matches `clients: []` in character JSON.
+ * Platform clients to attach when your ElizaOS stack supports a `clients` field.
+ * `elizaos start --character` uses strict JSON validation — put plugins in
+ * `characters/agent.character.json`; `clients` is kept here for TS projects / future CLI.
  */
-export enum Clients {}
+export const Clients = {
+  TWITTER: "TWITTER",
+  TELEGRAM: "TELEGRAM",
+  DIRECT: "DIRECT",
+} as const;
 
 export const character: Character & {
   modelProvider: (typeof ModelProviderName)[keyof typeof ModelProviderName];
-  clients: unknown[];
+  clients: readonly string[];
   lore: string[];
 } = {
   name: "Don Roneth",
   username: "donroneth",
-  plugins: [], // will be populated in prompt 05
-  clients: [], // will be populated in prompt 05
+  plugins: [
+    "@elizaos/plugin-bootstrap",
+    "@elizaos/plugin-openai",
+    "@elizaos/plugin-twitter",
+    "@elizaos/plugin-telegram",
+    "@chainpulse/web3journalist",
+  ],
+  clients: [Clients.TWITTER, Clients.TELEGRAM, Clients.DIRECT],
   modelProvider: ModelProviderName.OLLAMA,
   settings: {
     model: process.env.MODEL_NAME || "hf.co/Qwen/Qwen2.5-7B-Instruct-GGUF",
     voice: {
       model: "en_US-male-medium",
+    },
+    TWITTER_ENABLE_POST: "true",
+    TWITTER_DRY_RUN: process.env.TWITTER_DRY_RUN || "false",
+    TWITTER_RETRY_LIMIT: "5",
+    TWITTER_ENABLE_REPLIES: "false",
+    TWITTER_ENABLE_ACTIONS: "false",
+    secrets: {
+      TWITTER_API_KEY: process.env.TWITTER_API_KEY || "",
+      TWITTER_API_SECRET_KEY: process.env.TWITTER_API_SECRET_KEY || "",
+      TWITTER_ACCESS_TOKEN: process.env.TWITTER_ACCESS_TOKEN || "",
+      TWITTER_ACCESS_TOKEN_SECRET: process.env.TWITTER_ACCESS_TOKEN_SECRET || "",
+      TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || "",
+      HELIUS_API_KEY: process.env.HELIUS_API_KEY || "",
+      WEB3INSTANT_API_URL: process.env.WEB3INSTANT_API_URL || "",
+      WEB3INSTANT_API_SECRET: process.env.WEB3INSTANT_API_SECRET || "",
     },
   },
   system: `You are Don Roneth, the lead journalist at Web3Instant (web3instant.com), 

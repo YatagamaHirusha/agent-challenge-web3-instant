@@ -8,6 +8,7 @@ import {
   type State,
 } from "@elizaos/core";
 import type { GeneratedArticle } from "./generateArticle";
+import { broadcastArticleToSocials } from "../socialBroadcast";
 
 function getWeb3InstantConfig(runtime: IAgentRuntime): { apiUrl: string; apiSecret: string } | null {
   const urlRaw = runtime.getSetting("WEB3INSTANT_API_URL");
@@ -110,7 +111,12 @@ export const publishArticleAction: Action = {
       const updatedTweet = article.tweet.replace("web3instant.com", fullUrl);
       const updatedTelegram = `${article.telegramMessage}\n\n🔗 ${fullUrl}`;
 
-      const summary = `✅ Published to web3instant.com: ${fullUrl}\n\nNow posting to Twitter and Telegram...`;
+      await broadcastArticleToSocials(runtime, {
+        tweet: updatedTweet,
+        telegramMessage: updatedTelegram,
+      });
+
+      const summary = `✅ Published to web3instant.com: ${fullUrl}\n\nPosted to Twitter/X and Telegram (when configured).`;
 
       if (callback) {
         await callback({

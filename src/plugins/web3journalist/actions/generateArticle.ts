@@ -6,8 +6,8 @@ import {
   type IAgentRuntime,
   type Memory,
   type State,
-  ModelType,
 } from "@elizaos/core";
+import { chatCompletion } from "../llm";
 
 export interface GeneratedArticle {
   title: string;
@@ -102,14 +102,12 @@ export const generateArticleAction: Action = {
     console.log("[GENERATE_ARTICLE] Writing article for brief:", newsBrief.slice(0, 100));
 
     try {
-      const result = await runtime.useModel(ModelType.TEXT_LARGE, {
-        prompt: buildPrompt(newsBrief),
+      const response = await chatCompletion({
+        systemPrompt: ARTICLE_SYSTEM_PROMPT,
+        userPrompt: `NEWS BRIEF TO WRITE ABOUT:\n${newsBrief}\n\nRespond with ONLY the JSON object, no preamble, no markdown code fences.`,
         maxTokens: 4096,
         temperature: 0.7,
-        responseFormat: { type: "json_object" },
       });
-
-      const response = typeof result === "string" ? result : String(result);
 
       let article: GeneratedArticle;
       try {
